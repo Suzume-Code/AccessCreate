@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="ja">
+<head>
+    <HTA:APPLICATION
+        SCROLL = "yes"
+        NAVIGABLE = "yes"
+    />
+
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="X-UA-Compatible" content="IE=10;" >
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <!-- <link href="resources/bs43/bootstrap.min.css" rel="stylesheet"> -->
+
+    <style>
+        body { margin-top:8px; }
+    </style>
+
+    <title>アクセスデータベース新規作成</title>
+
+</head>
+
+<body>
+
+<div class="container-fluid">
+
+    <div class="row">
+        <div class="col-12">
+            <h4>Microsoft Access</h4>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="border rounded border-secondary" style="padding-left:8px;padding-right:8px;">
+                
+                <div class="form-group">
+                    <label for="folder" class="col-form-label-sm"><span style="font-size:9pt;">保存先フォルダ</span></label>
+                    <div class="input-group">
+                        <input type="text" class="form-control form-control-sm" id="folder" style="margin-top:-12px;">
+                        <div class="input-group-append">
+                            <button type="button" class="btn btn-sm btn-outline-secondary" style="margin-top:-12px;" onclick="selectDir()">...</button>
+                        </div>
+                    </div>
+
+                    <label for="accessfile" class="col-form-label-sm"><span style="font-size:9pt;">ファイル名</span></label>
+                    <input class="form-control form-control-sm" type="text" id="accessfile" style="margin-top:-12px;">
+                    <div style="height:8px;"></div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="overwrite">
+                        <label class="form-check-label" for="overwrite"><span style="font-size:9pt;">既存ファイルを上書きする</span></label>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <div style="height:12px;"></div>
+
+    <div class="row">
+        <div class="col-6">
+            <div class="border rounded border-secondary" style="padding-left:8px;padding-right:8px;">
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="radio1" id="ace" checked onclick="toggleExt('.accdb')">
+                    <label class="form-check-label" for="ace">ACE 12.0 (accdb)</label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="radio" name="radio1" id="jet" onclick="toggleExt('.mdb')">
+                    <label class="form-check-label" for="jet">Jet 4.0 (mdb)</label>
+                  </div>
+            </div>
+        </div>
+        <div class="col-6">
+            <button class="btn btn-sm btn-block btn-outline-secondary" onclick="odbcAdmin()">
+                <span style="font-size:10pt;">ODBC データソース<br>アドミニストレーター</span>
+            </button>
+        </div>
+    </div>
+
+    <div style="height:12px;"></div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="border rounded border-secondary" style="padding-left:8px;padding-right:8px;">
+                Microsoft Accessの空データベースを作成します。<br>
+                Access 2007以降(ACE 12.0) または、Access 2003以前(Jet 4.0)を選択して作成できます。<br>
+            </div>
+        </div>
+    </div>
+
+    <div style="height:12px;"></div>
+
+    <div class="row">
+        <div class="col-12" style="height:80px;">
+            <span id="result"></span>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-3">
+        </div>
+        <div class="col-6">
+            <button class="btn btn-sm btn-block btn-outline-secondary" onclick="create()">
+                <span style="font-size:9pt;">データベースを作成</span>
+            </button>
+        </div>
+        <div class="col-3">
+        </div>
+    </div>
+    
+</div>
+</body>
+</html>
+
+<!--
+<script src="resources/bs43/jquery-3.3.1.slim.min.js"></script>
+<script src="resources/bs43/popper.min.js"></script>
+<script src="resources/bs43/bootstrap.min.js"></script>
+-->
+
+<script language="javascript">
+"use strict"
+
+//
+window.resizeTo(480, 600);
+toggleExt(".accdb");
+
+//
+function selectDir() {
+  var objShell = new ActiveXObject("shell.application");
+  var folder = objShell.BrowseForFolder(0, "フォルダ選択", 0);
+  if (folder == null) return;
+  var elm = document.getElementById("folder");
+  elm.innerText = folder.Self.Path;
+}
+
+//
+function odbcAdmin() {
+    var shell = new ActiveXObject("WScript.Shell");
+    shell.Run("odbcad32");
+}
+
+//
+function toggleExt(ext) {
+    var elmm = document.getElementById("accessfile");
+    var filename = elmm.value;
+    if (filename.length == 0)
+        filename = "新規データベース.accdb";
+    var without = filename.split('.').slice(0, -1).join('.');
+    if (without.length == 0)
+        without = filename;
+    elmm.value = without + ext;
+}
+
+//
+function create() {
+    var elm_path = document.getElementById("folder");
+    elm_path.classList.remove("is-invalid");
+    var elm_AccessFilename = document.getElementById("accessfile");
+    elm_AccessFilename.classList.remove("is-invalid");
+    var elm_overwrite = document.getElementById("overwrite");
+    if (!validateFolderPath(elm_path)) {
+        elm_path.classList.add("is-invalid");
+        return;
+    }
+    if (!validateAccessFilaname(elm_AccessFilename, elm_overwrite.checked)) {
+        elm_AccessFilename.classList.add("is-invalid");
+        return;
+    }
+    var full_path = elm_path.value + "\\" + elm_AccessFilename.value;
+    if (elm_overwrite.checked) {
+        try {
+            var fs = new ActiveXObject("Scripting.FileSystemObject");
+            fs.DeleteFile(full_path);
+        } catch(err) {
+        }
+    }
+    var elm_ace = document.getElementById("ace");
+    var connect_string = "";
+    if (elm_ace.checked)
+        connect_string += "Provider=Microsoft.ACE.OLEDB.12.0;Data Source=\"" + full_path + "\"";
+    else
+        connect_string += "Provider='Microsoft.Jet.OLEDB.4.0';Data Source=\"" + full_path + "\"";
+    try {
+        var cat = new ActiveXObject("ADOX.Catalog");
+        cat.Create(connect_string);
+        setResult("データベースを作成しました。", "alert-success");
+    } catch(err) {
+        setResult("指定したプロバイダは使用できません。", "alert-danger");
+    }
+}
+
+//
+function setResult(msg, type) {
+    var result = document.getElementById("result");
+    result.innerHTML = "<div class=\"alert " + type + "\" role=\"alert\">" + msg + "</div>";
+}
+
+//
+function validateFolderPath(elm) {
+    var value = elm.value.trim();
+    if (value == "") {
+        setResult("保存先のフォルダーを指定してください。", "alert-danger");
+        return false;
+    }
+    var fs = new ActiveXObject("Scripting.FileSystemObject");
+    if (!fs.FolderExists(value)) {
+        setResult("保存先のフォルダーがあ見つかりませんでした。", "alert-danger");
+        return false;
+    }
+    return true;
+}
+
+//
+function validateAccessFilaname(elm, overwrite) {
+    var value = elm.value.trim();
+    if (value == "") {
+        setResult("ファイル名を指定してください。", "alert-danger");
+        return false;
+    }
+    var fs = new ActiveXObject("Scripting.FileSystemObject");
+    var exist = fs.FileExists(value);
+    if (!exist)
+        return true;
+    if (overwrite)
+        return true;
+    setResult("同名のファイルが存在しています。", "alert-danger");
+    return false;
+}
+
+</script>
